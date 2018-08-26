@@ -1,53 +1,72 @@
 import copy
 from .gotypes import Player
 
+# a class that represents a move on a go board.
 class Move():
+    # intializes a move, with parameters for a point, a boolean for checking
+    # if the move was passed, and a boolean for checking if the move was
+    # to resign.
     def __init__(self, point=None, is_pass=False, is_resign=False):
+        # if a move is a mix of a resign, pass, or valid move, throw an error
         assert (point is not None) ^ is_pass ^ is_resign
         self.point = point
         self.is_play = (self.point is not None)
         self.is_pass = is_pass
         self.is_resign = is_resign
 
+    # creates a new valid move based on a given point.
     @classmethod
     def play(cls, point):
         return Move(point=point)
 
+    # creates a new pass move.
     @classmethod
     def pass_turn(cls):
         return Move(is_pass=True)
 
+    # creates a new resign move
     @classmethod
     def resign(cls):
         return Move(is_resign=True)
 
+# a class that represents a convienent data structure for describing a group of stones.
 class GoString():
+    # given a color, a set of stones, and a number of liberties, creates a new go string. Also
+    # checks given stones in a string by points in a set, and liberties by given points in a set
     def __init__(self, color, stones, liberties):
         self.color = color
         self.stones = set(stones)
         self.liberties = set(liberties)
     
+    # removes a point from this GoString if its in the liberties set.
     def remove_liberty(self, point):
         self.liberties.remove(point)
     
+    # adds a point to this GoString's liberties set.
     def add_liberty(self, point):
         self.liberties.add(point)
     
+    # merges a given goString with this goString.
     def merged_with(self, go_string):
+        # make sure they are both of the same color
         assert go_string.color == self.color
+        # combined_stones  = set | set is equilivant to combined_stones = union(set, et);
+        # - with sets is difference of two sets 
         combined_stones = self.stones | go_string.stones
         return GoString(self.color, 
             combined_stones, 
             (self.liberties | go_string.liberties) - combined_stones)
     
+    # return the number of liberties this goString has.
     @property
     def num_liberties(self):
         return len(self.liberties)
 
+    # custom === for object
     def __eq__(self, other):
-        return isinstance(other, GoString) and \
-        self.color == other.color and \ 
-        self.stones == other.stones and \
+        return isinstance(other, GoString) and 
+        self.color == other.color and 
+        self.stones == other.stones and 
         self.liberties == other.liberties
 
 class Board():
@@ -87,7 +106,7 @@ class Board():
     
     
     def is_on_grid(self, point):
-        return 1 <= point.row <= self.num_rows and \
+        return 1 <= point.row <= self.num_rows and 
             1 <= point.col <= self.num_cols
         
     def get(self, point):
