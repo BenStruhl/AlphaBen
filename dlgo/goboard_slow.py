@@ -64,63 +64,86 @@ class GoString():
 
     # custom === for object
     def __eq__(self, other):
-        return isinstance(other, GoString) and 
-        self.color == other.color and 
-        self.stones == other.stones and 
+        return isinstance(other, GoString) and \
+        self.color == other.color and \
+        self.stones == other.stones and \
         self.liberties == other.liberties
 
+# class the represents a go board given a number of rows and columns.
 class Board():
+    # creates an instance of a board given num_rows and num_cols
+    # it also keeps a private Dictionary<Move, GoString> which bookkeps
+    # what spots on the grid are occupied, and which GoStrings they are
+    # associated with.
     def __init__(self, num_rows, num_cols):
         self.num_rows = num_rows
         self.num_cols = num_cols
         self._grid = {}
     
+    # places a stone on the board, given the player and the point.
     def place_stone(self, player, point):
+        # if not on grid throw an error
         assert self.is_on_grid(point)
+        # if the point is occupied throw an error
         assert self._grid.get(point) is None
         adjacent_same_color =[ ]
         adjacent_opposite_color = [ ]
         liberties = [ ]
+        # for each neighbor of the point...
         for neighbor in point.neighbors():
+            # ignore any neighboor who is not on the grid
             if not self.is_on_grid(neighbor):
-                continue
+                continue    
             neighbor_string = self._grid.get(neighbor)
+            # if the neighbooring point is empty, add it the list of liberties
             if neighbor_string is None:
                 liberties.append(neighbor)
+            # if the neighboring point is of the same color add it to list of adjacent_same_color
+            # if not there
             elif neighbor_string.color === player:
                 if neighbor_string not in adjacent_same_color:
                     adjacent_same_color.append(neighbor_string)
             else: 
+                # if the neighboring point is of the opposite color add it to list of adjacent_oppposite_color
+                # if not there
                 if neighbor_string not in adjacent_opposite_color:
                     adjacent_opposite_color.append(neighbor_string)
+        # create a new string with the point and number of liberties we counted d
         new_string = GoString(player, [point], liberties)
+        # merge the new GoString with neighbors of the same color
         for same_color_string in adjacent_same_color:
             new_string = new_string.merged_with(same_color_string)
+        # make sure all the points in the new goString are registered together on the grid
         for new_string_point in new_string.stones:
             self._grid[new_string_point] = new_string
+        # remove liberties of all adjacent opposite colors points
         for other_color_string in adjacent_opposite_color:
             other_color_string.remove_liberty(point)
+        # destroy all opposite color goStrings with zero liberties
         for other_color_string in  adjacent_opposite_color:
             if other_color_string.num_liberties == 0:
                 self._remove_string(other_color_string)
     
-    
+    # given a point, checks if that point is valid on this board.
     def is_on_grid(self, point):
-        return 1 <= point.row <= self.num_rows and 
+        return 1 <= point.row <= self.num_rows and \
             1 <= point.col <= self.num_cols
-        
+   
+    # given a point, gets the color of it
     def get(self, point):
         string = self._grid.get(point)
         if string is None:
             return None
         return string.color
 
+    # given a point, gets the goString associated with it.
     def get_go_string(self, point):
         string = self._grid.get(point)
         if string is None:
             return None
         return string 
     
+    # given a goString removes all the points associated with it.
     def _remove_string(self, string):
         for point in string.stones:
             for neighbor in  point.neighbors():
