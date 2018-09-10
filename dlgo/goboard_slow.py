@@ -1,5 +1,5 @@
 import copy
-from .gotypes import Player
+from dlgo.gotypes import Player
 
 # a class that represents a move on a go board.
 class Move():
@@ -98,9 +98,8 @@ class Board():
             # if the neighbooring point is empty, add it the list of liberties
             if neighbor_string is None:
                 liberties.append(neighbor)
-            # if the neighboring point is of the same color add it to list of adjacent_same_color
-            # if not there
-            elif neighbor_string.color === player:
+            # if the neighboring point is of the same color add it to list of adjacent_same_color if not there
+            elif neighbor_string.color == player:
                 if neighbor_string not in adjacent_same_color:
                     adjacent_same_color.append(neighbor_string)
             else: 
@@ -153,3 +152,49 @@ class Board():
                 if neighbor_string is not string:
                     neighbor_string.add_liberty(point)
             self._grid[point] = None
+
+# this class represents the game state of a go game instance
+class GameState():
+    # takes in a Board, the next player to play, the previous player,
+    # and the last move 
+    def __init__(self, board, next_player, previous, move):
+        self.board = board
+        self.next_player = next_player
+        self.previous_state = previous
+        self.last_move = move
+
+    def apply_move(self, player, move):
+        if player != self.next_player:
+            raise ValueError(player)
+        if move.is_play: 
+            next_board = copy.deepcopy(self.board)
+            next_board.place_stone(player, move.point)
+        else:
+            next_board = self.board
+        return GameState(next_board, player.other, self, move)
+    
+    @classmethod
+    def new_game(cls, board_size):
+        if isinstance(board_size, int):
+            board_size = (board_size, board_size)
+        board = Board(*board_size)
+        return GameState(board, Player.black, None, None)
+
+    def is_over(self):
+        if self.last_move is None:
+            return False
+        if self.last_move.is_resign:
+            return True
+        second_last_move = self.previous_state.last_move
+        if second_last_move is None:
+            return False
+        return self.last_move.is_pass and second_last_move.is_pass
+
+    def is_move_self_capture(self, player, move):
+        if not move.is_play:
+            return False
+        next_board = copy.deepcopy(self.board)
+        next_board.place_stone(player, move.point)
+        new_string = next_board.get_go_string(move.point)
+        
+
